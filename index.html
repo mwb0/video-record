@@ -79,9 +79,9 @@
                 class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer disabled">
                 Pause
               </div>
-              <div id="btn-submit-recording"
+              <div id="btn-play-recording"
                 class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer disabled">
-                Submit
+                Play
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@
       $("#btn-stop-recording").addClass("hidden");
       $("#btn-start-recording").removeClass("hidden");
       $("#btn-pause-recording").addClass("disabled");
-      $("#btn-submit-recording").removeClass("disabled");
+      $("#btn-play-recording").removeClass("disabled");
       playOptions(false)
     };
 
@@ -175,28 +175,9 @@
       playOptions(true)
     };
 
-    // Submit recording
-    document.getElementById("btn-submit-recording").onclick = function () {
-      var formData = new FormData();
-      var fileName = "webrtc_video"
-      var fileObject = new File([blob], fileName, {
-        type: 'video/webm'
-      });
-
-      formData.append('video-blob', fileObject);
-      formData.append('video-filename', fileObject.name);
-
-      window.location.href="/"
-
-      // $.ajax({
-      //   url: "./upload.php",
-      //   type: "POST",
-      //   dataType: "json",
-      //   data: formData,
-      //   processData: false
-      // }, function (res) {
-      //   console.log('debug', res)
-      // })
+    // Play recording
+    document.getElementById("btn-play-recording").onclick = function () {
+      video.play();
     };
 
     function playOptions(status) {
