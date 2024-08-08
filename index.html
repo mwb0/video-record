@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Video Recording</title>
+  <meta name="description" content="" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="shortcut icon" href="./images/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .disabled {
+      opacity: 50%;
+      pointer-events: none;
+    }
+
+    .recording {
+      animation: 2s linear scale infinite;
+    }
+
+    @keyframes scale {
+      0% {
+        scale: 1;
+      }
+
+      50% {
+        scale: 0.6;
+      }
+
+      100% {
+        scale: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="min-h-screen bg-black">
+    <div class="container mx-auto pt-32">
+      <div class="w-full px-4 sm:w-[32em] sm:px-0 mx-auto">
+        <div class="bg-gray-50 border border-gray-200 rounded-xl px-6 py-8">
+          <div class="flex justify-center items-center gap-2">
+            <img src="./images/icon_check.png" alt="check" />
+            <h3 class="text-center text-xl font-bold">
+              Video Verification
+            </h3>
+          </div>
+          <div class="w-full h-96 bg-black relative mt-6 rounded-xl">
+            <video class="absolute left-0 top-1/2 -translate-y-1/2 w-full z-10" autoplay playsinline></video>
+            <div id="icon_play" class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-20">
+              <i class="fa-solid fa-play text-white text-6xl"></i>
+            </div>
+            <div id="icon_recording"
+              class="absolute left-4 top-4 justify-center items-center border border-red-600 hidden p-2 rounded-full z-20">
+              <div class="bg-red-600 rounded-full w-4 h-4 recording"></div>
+            </div>
+          </div>
+          <div class="flex justify-between items-center mt-4">
+            <div><i class="fa-solid fa-circle-arrow-left"></i></div>
+            <div class="flex items-center gap-2">
+              <div id="btn-start-recording"
+                class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer">
+                Start 
+              </div>
+              <div id="btn-stop-recording"
+                class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer hidden">
+                Stop 
+              </div>
+              <div id="btn-resume-recording"
+                class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer hidden">
+                Resume
+              </div>
+              <div id="btn-pause-recording"
+                class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer disabled">
+                Pause
+              </div>
+              <div id="btn-submit-recording"
+                class="bg-gray-500 hover:bg-sky-500 text-white px-4 py-1 text-lg rounded-md cursor-pointer disabled">
+                Submit
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    var video = document.querySelector("video");
+    var recorder; // globally accessible
+    var blob; // recorded blob
+
+    function captureCamera(callback) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true, video: true })
+        .then(function (camera) {
+          callback(camera);
+        })
+        .catch(function (error) {
+          alert("Unable to capture your camera. Please check console logs.");
+          console.error(error);
+        });
+    }
+
+    function stopRecordingCallback() {
+      blob = recorder.getBlob()
+      video.src = video.srcObject = null;
+      video.src = URL.createObjectURL(blob);
+      video.pause();
+      recorder.screen.stop();
+      recorder.destroy();
+      recorder = null;
+
+      document.getElementById("btn-start-recording").disabled = false;
+    }
+
+    // Start recording
+    document.getElementById("btn-start-recording").onclick = function () {
+      captureCamera(function (camera) {
+        video.muted = true;
+        video.volume = 0;
+        video.srcObject = camera;
+
+        recorder = RecordRTC(camera, {
+          recorderType: MediaStreamRecorder,
+          mimeType: "video/webm",
+        });
+
+        recorder.startRecording();
+
+        recorder.camera = camera;
+      });
+
+      $("#btn-start-recording").addClass("hidden");
+      $("#btn-stop-recording").removeClass("hidden");
+      $("#btn-pause-recording").removeClass("disabled");
+      playOptions(true)
+    };
+
+    // Stop recording
+    document.getElementById("btn-stop-recording").onclick = function () {
+      recorder.stopRecording(stopRecordingCallback);
+
+      $("#btn-stop-recording").addClass("hidden");
+      $("#btn-start-recording").removeClass("hidden");
+      $("#btn-pause-recording").addClass("disabled");
+      $("#btn-submit-recording").removeClass("disabled");
+      playOptions(false)
+    };
+
+    // Pause recording
+    document.getElementById("btn-pause-recording").onclick = function () {
+      recorder.pauseRecording();
+      video.pause();
+
+      $("#btn-stop-recording").addClass("hidden");
+      $("#btn-resume-recording").removeClass("hidden");
+      $("#btn-pause-recording").addClass("disabled");
+      playOptions(false)
+    };
+
+    // Resume recording
+    document.getElementById("btn-resume-recording").onclick = function () {
+      recorder.resumeRecording();
+      video.play();
+
+      $("#btn-stop-recording").removeClass("hidden");
+      $("#btn-resume-recording").addClass("hidden");
+      $("#btn-pause-recording").removeClass("disabled");
+      playOptions(true)
+    };
+
+    // Submit recording
+    document.getElementById("btn-submit-recording").onclick = function () {
+      var formData = new FormData();
+      var fileName = "webrtc_video"
+      var fileObject = new File([blob], fileName, {
+        type: 'video/webm'
+      });
+
+      formData.append('video-blob', fileObject);
+      formData.append('video-filename', fileObject.name);
+
+      window.location.href="/"
+
+      // $.ajax({
+      //   url: "./upload.php",
+      //   type: "POST",
+      //   dataType: "json",
+      //   data: formData,
+      //   processData: false
+      // }, function (res) {
+      //   console.log('debug', res)
+      // })
+    };
+
+    function playOptions(status) {
+      if (status) {
+        $("#icon_recording").removeClass("hidden");
+        $("#icon_play").removeClass("flex").addClass("hidden");
+      } else {
+        $("#icon_recording").addClass("hidden");
+        $("#icon_play").removeClass("hidden");
+      }
+    }
+  </script>
+</body>
+
+</html>
